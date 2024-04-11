@@ -18,15 +18,17 @@ type PhoneBookList struct {
 var phoneBook []PhoneBookList
 
 func main() {
-	router := mux.NewRouter()
-
-	router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
-	router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
-	router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
-	router.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
-
+	match := valid_phone("1 (817)501-0105")
+	log.Println(match)
+	// router := mux.NewRouter()
+	//
+	// router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
+	// router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
+	// router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
+	// router.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
+	//
 	log.Println("Starting server...")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	// log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func retreiveAllEntries(w http.ResponseWriter, r *http.Request) {
