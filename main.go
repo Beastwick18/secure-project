@@ -18,8 +18,7 @@ type PhoneBookList struct {
 var phoneBook []PhoneBookList
 
 func main() {
-	match := valid_phone("1 (817)501-0105")
-	log.Println(match)
+
 	// router := mux.NewRouter()
 	//
 	// router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
@@ -31,7 +30,7 @@ func main() {
 	// log.Fatal(http.ListenAndServe(":8080", router))
 }
 
-func retreiveAllEntries(w http.ResponseWriter, r *http.Request) {
+func retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
 	entries, err := json.Marshal(phoneBook)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
