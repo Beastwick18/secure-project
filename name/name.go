@@ -18,11 +18,6 @@ func ValidName(name string) bool {
 	last := `(([A-Z][a-z]*'[A-Z]?[a-z]+)|([A-Z][a-z]+))`
 	last = `(` + last + `(-` + last + `)?)` // Allow optional -secondLastName
 	middle := `(([A-Z]\.?)|([A-Z][a-z]*'[A-Z]?[a-z]+)|([A-Z][a-z]+))`
-	if match(`^`+first+`( `+middle+`)?( `+last+`)?$`, name) {
-		return true
-	}
-	if match(`^`+last+`\, `+first+`( `+middle+`)?$`, name) {
-		return true
-	}
-	return false
+	return match(`^`+first+`( `+middle+`)?( `+last+`)?$`, name) ||
+		match(`^`+last+`\, `+first+`( `+middle+`)?$`, name)
 }

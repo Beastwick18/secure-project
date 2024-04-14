@@ -2,9 +2,10 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
+	"secure/name"
+	"secure/phone"
 
 	"github.com/gorilla/mux"
 	_ "github.com/mattn/go-sqlite3"
@@ -19,15 +20,15 @@ var phoneBook []PhoneBookList
 
 func main() {
 
-	// router := mux.NewRouter()
-	//
-	// router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
-	// router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
-	// router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
-	// router.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
-	//
+	router := mux.NewRouter()
+
+	router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
+	router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
+	router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
+	router.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
+
 	log.Println("Starting server...")
-	// log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
 
 func retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
@@ -49,6 +50,18 @@ func insertNewPhonebook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !name.ValidName(entry.Username) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid name"))
+		return
+	}
+
+	if !phone.ValidPhone(entry.PhoneNumber) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid phone number"))
+		return
+	}
+
 	phoneBook = append(phoneBook, entry)
 	w.WriteHeader(http.StatusOK)
 }
@@ -59,17 +72,23 @@ func deletePhonebookEntryByName(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	params := mux.Vars(r)
-	name := params["name"]
-	if name == "" {
+	name_str := params["name"]
+	if name_str == "" {
 		w.WriteHeader(http.StatusBadRequest)
 		w.Write([]byte("Name is a mandatory field"))
+		return
+	}
+
+	if !name.ValidName(name_str) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid phone number"))
 		return
 	}
 
 	// Delete entry from in-memory phonebook
 	deleted := false
 	for i, entry := range phoneBook {
-		if entry.Username == name {
+		if entry.Username == name_str {
 			phoneBook = append(phoneBook[:i], phoneBook[i+1:]...)
 			deleted = true
 			break
@@ -77,7 +96,7 @@ func deletePhonebookEntryByName(w http.ResponseWriter, r *http.Request) {
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprintf("Name  %s not found", name)))
+		w.Write([]byte("Name not found"))
 		return
 	}
 
@@ -97,6 +116,12 @@ func deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !phone.ValidPhone(number) {
+		w.WriteHeader(http.StatusBadRequest)
+		w.Write([]byte("Invalid phone number"))
+		return
+	}
+
 	// Delete entry from in-memory phonebook
 	deleted := false
 	for i, entry := range phoneBook {
@@ -108,7 +133,7 @@ func deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.Request) {
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte(fmt.Sprintf("Entered number %s not found", number)))
+		w.Write([]byte("Entered number not found"))
 		return
 	}
 

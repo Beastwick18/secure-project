@@ -1,4 +1,4 @@
-module github.com/ritheshbhat/seed-go
+module secure
 
 go 1.19
 
