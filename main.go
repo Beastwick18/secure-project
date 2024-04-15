@@ -35,8 +35,8 @@ func main() {
 
 	a := auth.Auth{}
 	a.Populate()
-	read.Use(a.Middleware(true, false))
-	readwrite.Use(a.Middleware(true, true))
+	read.Use(a.Middleware([]string{auth.Read}))
+	readwrite.Use(a.Middleware([]string{auth.Read, auth.Write}))
 	// router.Use(a.Middleware)
 	router.Use(LogMiddleware)
 	read.HandleFunc("/PhoneBook/list", ctx.retreiveAllEntries).Methods("GET")

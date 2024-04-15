@@ -2,6 +2,7 @@ package auth
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -11,6 +12,13 @@ import (
 	"github.com/gorilla/mux"
 )
 
+type Permission int
+
+const (
+	Read  = "Read"
+	Write = "Write"
+)
+
 type User struct {
 	Name        string   `json:"name"`
 	ApiKey      string   `json:"apiKey"`
@@ -18,15 +26,15 @@ type User struct {
 }
 
 var PermissionShorthand map[string]string = map[string]string{
-	"read":  "r",
-	"write": "w",
+	Read:  "r",
+	Write: "w",
 }
 
 type Auth struct {
 	Users []User `json:"users"`
 }
 
-func (auth *Auth) Middleware(require_read bool, require_write bool) mux.MiddlewareFunc {
+func (auth *Auth) Middleware(permissions []string) mux.MiddlewareFunc {
 	return func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			token := r.Header.Get("Authorization")
@@ -49,15 +57,12 @@ func (auth *Auth) Middleware(require_read bool, require_write bool) mux.Middlewa
 				w.Write([]byte("Unknown authorization"))
 				return
 			}
-			if require_read && !util.Contains(u.Permissions, "read") {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Missing read permissions"))
-				return
-			}
-			if require_write && !util.Contains(u.Permissions, "write") {
-				w.WriteHeader(http.StatusUnauthorized)
-				w.Write([]byte("Missing write permissions"))
-				return
+			for _, p := range permissions {
+				if !util.Contains(u.Permissions, p) {
+					w.WriteHeader(http.StatusUnauthorized)
+					w.Write([]byte(fmt.Sprintf("Missing %s permissions", p)))
+					return
+				}
 			}
 			log.Printf(`Authenticated "%s"`, u.Name)
 			next.ServeHTTP(w, r)

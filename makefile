@@ -4,7 +4,7 @@ build:
 	go build -o seed-go
 
 run: build
-	./seed-go
+	./seed-go ./data/phonebook.db
 
 test:
 	go test -v ./...
@@ -15,4 +15,4 @@ docker-build:
 	docker build -t secure-go .
 
 docker-run:
-	docker run -v ./users.db:/users.db -p 8080:8080 secure-go
+	docker run -v ./data:/data -u 1000:1000 -p 8080:8080 secure-go
