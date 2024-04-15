@@ -2,7 +2,7 @@ package name
 
 import (
 	"fmt"
-	"secure/util"
+	"secure/pkg/util"
 	"strings"
 )
 

@@ -2,7 +2,7 @@ package phone
 
 import (
 	"fmt"
-	"secure/util"
+	"secure/pkg/util"
 )
 
 func ValidPhone(p string) bool {

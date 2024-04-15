@@ -7,10 +7,11 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"secure/auth"
-	"secure/database"
-	"secure/name"
-	"secure/phone"
+	"path/filepath"
+	"secure/pkg/auth"
+	"secure/pkg/database"
+	"secure/pkg/name"
+	"secure/pkg/phone"
 
 	"github.com/gorilla/mux"
 )
@@ -25,9 +26,9 @@ func main() {
 	read := router.NewRoute().Subrouter()
 	readwrite := router.NewRoute().Subrouter()
 
-	path := "users.db"
+	phonebookPath := "phonebook.db"
 	if len(os.Args) > 1 {
-		path = os.Args[1]
+		phonebookPath = os.Args[1]
 	}
 
 	auditPath := "audit.log"
@@ -35,14 +36,20 @@ func main() {
 		auditPath = os.Args[2]
 	}
 
+	os.MkdirAll(filepath.Dir(auditPath), os.ModePerm)
 	auditFile, err := os.OpenFile(auditPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
 	if err != nil {
 		log.Printf("Failed to create audit.log:\n%s", err)
 	}
 	w := io.MultiWriter(os.Stdout, auditFile)
 
+	pb, err := database.CreateTable(phonebookPath)
+	if err != nil {
+		log.Fatalf("Failed to open database:\n%s", err)
+	}
+	log.Printf("Successfully loaded %s", phonebookPath)
 	ctx := Context{
-		pb: database.CreateTable(path),
+		pb: pb,
 	}
 	defer ctx.pb.Close()
 

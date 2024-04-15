@@ -6,7 +6,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"secure/util"
+	"secure/pkg/util"
 	"strings"
 
 	"github.com/gorilla/mux"

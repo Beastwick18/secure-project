@@ -2,7 +2,8 @@ package database
 
 import (
 	"database/sql"
-	"log"
+	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 )
@@ -16,24 +17,24 @@ type UserEntry struct {
 	Phone string `json:"phone"`
 }
 
-func CreateTable(path string) *PhoneBook {
+func CreateTable(path string) (*PhoneBook, error) {
 	const create string = `
   CREATE TABLE IF NOT EXISTS users (
   id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-  name VARCHAR(120) NOT NULL,
-  phone VARCHAR(50) NOT NULL
+  name VARCHAR(256) NOT NULL,
+  phone VARCHAR(64) NOT NULL
   );`
+	os.MkdirAll(filepath.Dir(path), os.ModePerm)
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
-		log.Fatalf("Failed to open users.db:\n%s", err)
+		return nil, err
 	}
 	if _, err := db.Exec(create); err != nil {
-		log.Fatalf("Failed to create table in database:\n%s", err)
+		return nil, err
 	}
-	log.Println("Successfully loaded users.db")
 	return &PhoneBook{
 		db: db,
-	}
+	}, nil
 }
 
 func (p *PhoneBook) ListAll() ([]*UserEntry, error) {
@@ -84,6 +85,9 @@ func (p *PhoneBook) DeleteByPhone(phone string) (string, bool, error) {
 	const find string = `SELECT name FROM users WHERE phone=?;`
 	var name string
 	if err := p.db.QueryRow(find, phone).Scan(&name); err != nil {
+		if err == sql.ErrNoRows {
+			return "", false, nil
+		}
 		return "", false, err
 	}
 	const deleteByPhone string = `
