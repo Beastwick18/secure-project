@@ -16,4 +16,4 @@ RUN go build -o main .
 EXPOSE 8080
 
 # Run the executable
-CMD ["./main", "/data/phonebook.db"]
+CMD ["./main", "/data/phonebook.db", "/data/audit.log"]

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"os"
@@ -15,7 +16,8 @@ import (
 )
 
 type Context struct {
-	pb *database.PhoneBook
+	pb    *database.PhoneBook
+	audit *log.Logger
 }
 
 func main() {
@@ -28,10 +30,23 @@ func main() {
 		path = os.Args[1]
 	}
 
+	auditPath := "audit.log"
+	if len(os.Args) > 2 {
+		auditPath = os.Args[2]
+	}
+
+	auditFile, err := os.OpenFile(auditPath, os.O_APPEND|os.O_WRONLY|os.O_CREATE, 0644)
+	if err != nil {
+		log.Printf("Failed to create audit.log:\n%s", err)
+	}
+	w := io.MultiWriter(os.Stdout, auditFile)
+
 	ctx := Context{
 		pb: database.CreateTable(path),
 	}
 	defer ctx.pb.Close()
+
+	ctx.audit = log.New(w, "<Audit> ", log.LstdFlags)
 
 	a := auth.Auth{}
 	a.Populate()
@@ -55,7 +70,7 @@ func LogMiddleware(next http.Handler) http.Handler {
 	})
 }
 
-func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
+func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, r *http.Request) {
 	entries, err := ctx.pb.ListAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -66,6 +81,7 @@ func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	ctx.audit.Printf(`[%s] List all users`, r.Header.Get("Authorization"))
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(json_string)
 }
@@ -97,6 +113,8 @@ func (ctx *Context) insertNewPhonebook(w http.ResponseWriter, r *http.Request) {
 		log.Println("Failed to insert new entry into database")
 		return
 	}
+
+	ctx.audit.Printf(`[%s] Added user "%s"`, r.Header.Get("Authorization"), entry.Name)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -130,6 +148,7 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 		return
 	}
 
+	ctx.audit.Printf(`[%s] Removed user "%s"`, r.Header.Get("Authorization"), name_str)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -152,24 +171,16 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 		return
 	}
 
-	// Delete entry from in-memory phonebook
-	// deleted := false
-	deleted, err := ctx.pb.DeleteByPhone(number)
+	name, deleted, err := ctx.pb.DeleteByPhone(number)
 	if err != nil {
 		log.Printf("Error while trying to delete by phone number:\n%s", err)
 	}
-	// for i, entry := range phoneBook {
-	// 	if entry.PhoneNumber == number {
-	// 		phoneBook = append(phoneBook[:i], phoneBook[i+1:]...)
-	// 		deleted = true
-	// 		break
-	// 	}
-	// }
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Entered number not found"))
 		return
 	}
 
+	ctx.audit.Printf(`[%s] Removed user "%s"`, r.Header.Get("Authorization"), name)
 	w.WriteHeader(http.StatusOK)
 }

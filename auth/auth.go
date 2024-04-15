@@ -15,8 +15,8 @@ import (
 type Permission int
 
 const (
-	Read  = "Read"
-	Write = "Write"
+	Read  = "read"
+	Write = "write"
 )
 
 type User struct {
@@ -65,6 +65,7 @@ func (auth *Auth) Middleware(permissions []string) mux.MiddlewareFunc {
 				}
 			}
 			log.Printf(`Authenticated "%s"`, u.Name)
+			r.Header.Set("Authorization", u.Name)
 			next.ServeHTTP(w, r)
 		})
 	}

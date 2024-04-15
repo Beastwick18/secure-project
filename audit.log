@@ -1,0 +1,6 @@
+Audit2024/04/15 03:22:15 [read-only] List all users
+Audit2024/04/15 03:22:44 [read-write] Added user "Steven Culwell"
+<Audit> 2024/04/15 03:23:21 [read-write] Added user "Steven Culwell"
+<Audit> 2024/04/15 03:23:30 [read-only] List all users
+<Audit> 2024/04/15 03:23:36 [read-write] Removed user "Steven Culwell"
+<Audit> 2024/04/15 03:23:47 [read-only] List all users

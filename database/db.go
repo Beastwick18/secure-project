@@ -80,19 +80,24 @@ func (p *PhoneBook) DeleteByName(name string) (bool, error) {
 	return rows > 0, nil
 }
 
-func (p *PhoneBook) DeleteByPhone(phone string) (bool, error) {
+func (p *PhoneBook) DeleteByPhone(phone string) (string, bool, error) {
+	const find string = `SELECT name FROM users WHERE phone=?;`
+	var name string
+	if err := p.db.QueryRow(find, phone).Scan(&name); err != nil {
+		return "", false, err
+	}
 	const deleteByPhone string = `
   DELETE FROM users
   WHERE phone=?;`
 	res, err := p.db.Exec(deleteByPhone, phone)
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
 	rows, err := res.RowsAffected()
 	if err != nil {
-		return false, err
+		return "", false, err
 	}
-	return rows > 0, nil
+	return name, rows > 0, nil
 }
 
 func (p *PhoneBook) Close() {
