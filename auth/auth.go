@@ -5,7 +5,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"slices"
+	"secure/util"
 	"strings"
 
 	"github.com/gorilla/mux"
@@ -49,12 +49,12 @@ func (auth *Auth) Middleware(require_read bool, require_write bool) mux.Middlewa
 				w.Write([]byte("Unknown authorization"))
 				return
 			}
-			if require_read && !slices.Contains(u.Permissions, "read") {
+			if require_read && !util.Contains(u.Permissions, "read") {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("Missing read permissions"))
 				return
 			}
-			if require_write && !slices.Contains(u.Permissions, "write") {
+			if require_write && !util.Contains(u.Permissions, "write") {
 				w.WriteHeader(http.StatusUnauthorized)
 				w.Write([]byte("Missing write permissions"))
 				return

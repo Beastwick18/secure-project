@@ -2,18 +2,9 @@ package name
 
 import (
 	"fmt"
-	"log"
-	"regexp"
+	"secure/util"
 	"strings"
 )
-
-func match(pattern string, input string) bool {
-	match, err := regexp.MatchString(pattern, input)
-	if err != nil {
-		log.Fatal("Error: ", err)
-	}
-	return match
-}
 
 func ValidName(name string) bool {
 	first := `([a-z]+('[a-z]+)?)`
@@ -24,5 +15,5 @@ func ValidName(name string) bool {
 
 	fml := fmt.Sprintf(`^%s( %s)?( %s)?$`, first, middle, last)
 	lfm := fmt.Sprintf(`^%s\, %s( %s)?`, last, first, middle)
-	return match(fml, name) || match(lfm, name)
+	return util.Match(fml, name) || util.Match(lfm, name)
 }

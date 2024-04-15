@@ -7,7 +7,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type Users struct {
+type PhoneBook struct {
 	db *sql.DB
 }
 
@@ -16,14 +16,14 @@ type UserEntry struct {
 	Phone string `json:"phone"`
 }
 
-func CreateTable() *Users {
+func CreateTable(path string) *PhoneBook {
 	const create string = `
   CREATE TABLE IF NOT EXISTS users (
-  id INTEGER NOT NULL PRIMARY KEY,
+  id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
   name VARCHAR(120) NOT NULL,
   phone VARCHAR(50) NOT NULL
   );`
-	db, err := sql.Open("sqlite3", "users.db")
+	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatalf("Failed to open users.db:\n%s", err)
 	}
@@ -31,22 +31,24 @@ func CreateTable() *Users {
 		log.Fatalf("Failed to create table in database:\n%s", err)
 	}
 	log.Println("Successfully loaded users.db")
-	return &Users{
+	return &PhoneBook{
 		db: db,
 	}
 }
 
-func (u *Users) ListAll() ([]*UserEntry, error) {
+func (p *PhoneBook) ListAll() ([]*UserEntry, error) {
 	var users []*UserEntry
 	const listAll string = `
-  SELECT * FROM users`
-	rows, err := u.db.Query(listAll)
+  SELECT * FROM users;`
+	rows, err := p.db.Query(listAll)
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
+		var id int
 		var entry UserEntry
-		if err := rows.Scan(&entry.Name, &entry.Phone); err != nil {
+		if err := rows.Scan(&id, &entry.Name, &entry.Phone); err != nil {
 			return nil, err
 		}
 		users = append(users, &entry)
@@ -54,20 +56,20 @@ func (u *Users) ListAll() ([]*UserEntry, error) {
 	return users, nil
 }
 
-func (u *Users) Append(entry *UserEntry) error {
+func (p *PhoneBook) Append(entry *UserEntry) error {
 	const insert string = `
-  INSERT INTO users VALUES(?, ?)`
-	if _, err := u.db.Exec(insert, entry.Name, entry.Phone); err != nil {
+  INSERT INTO users(name, phone) VALUES (?, ?);`
+	if _, err := p.db.Exec(insert, entry.Name, entry.Phone); err != nil {
 		return err
 	}
 	return nil
 }
 
-func (u *Users) DeleteByName(name string) (bool, error) {
+func (p *PhoneBook) DeleteByName(name string) (bool, error) {
 	const deleteByName string = `
   DELETE FROM users
-  WHERE name=?`
-	res, err := u.db.Exec(deleteByName, name)
+  WHERE name=?;`
+	res, err := p.db.Exec(deleteByName, name)
 	if err != nil {
 		return false, err
 	}
@@ -78,11 +80,11 @@ func (u *Users) DeleteByName(name string) (bool, error) {
 	return rows > 0, nil
 }
 
-func (u *Users) DeleteByPhone(phone string) (bool, error) {
+func (p *PhoneBook) DeleteByPhone(phone string) (bool, error) {
 	const deleteByPhone string = `
   DELETE FROM users
-  WHERE phone=?`
-	res, err := u.db.Exec(deleteByPhone, phone)
+  WHERE phone=?;`
+	res, err := p.db.Exec(deleteByPhone, phone)
 	if err != nil {
 		return false, err
 	}
@@ -91,4 +93,8 @@ func (u *Users) DeleteByPhone(phone string) (bool, error) {
 		return false, err
 	}
 	return rows > 0, nil
+}
+
+func (p *PhoneBook) Close() {
+	p.db.Close()
 }

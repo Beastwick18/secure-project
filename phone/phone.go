@@ -2,21 +2,12 @@ package phone
 
 import (
 	"fmt"
-	"log"
-	"regexp"
+	"secure/util"
 )
-
-func match(pattern string, input string) bool {
-	match, err := regexp.MatchString(pattern, input)
-	if err != nil {
-		log.Fatal("Error: ", err)
-	}
-	return match
-}
 
 func ValidPhone(p string) bool {
 	// Match internal extension number
-	if match(`^\d{5}$`, p) {
+	if util.Match(`^\d{5}$`, p) {
 		return true
 	}
 
@@ -25,14 +16,14 @@ func ValidPhone(p string) bool {
 	// no_zero2 := `[1-9][0-9]{0,1}`
 
 	// Match 011 +1 (12) 123-1234 like numbers
-	if match(fmt.Sprintf(`^(\d{3}\s?)?(\+?%s\s?)?(\(%s\)\s?)?\d{3}\-\d{4}$`, no_zero3, no_zero_both), p) {
+	if util.Match(fmt.Sprintf(`^(\d{3}\s?)?(\+?%s\s?)?(\(%s\)\s?)?\d{3}\-\d{4}$`, no_zero3, no_zero_both), p) {
 		return true
 	}
 
 	// Match any 123-123-1234 or 1-123-123-1234 with any valid seperator
 	seps := []string{`\.`, `\-`, ` `}
 	for _, sep := range seps {
-		if match(fmt.Sprintf(`^(\d{3}%s)?(\+?%s%s)?\d{2,3}%s\d{3}%s\d{4}$`, sep, no_zero3, sep, sep, sep), p) {
+		if util.Match(fmt.Sprintf(`^(\d{3}%s)?(\+?%s%s)?\d{2,3}%s\d{3}%s\d{4}$`, sep, no_zero3, sep, sep, sep), p) {
 			return true
 		}
 	}
@@ -40,7 +31,7 @@ func ValidPhone(p string) bool {
 	// Danish AA AA AA AA
 	seps = []string{`\.`, ` `}
 	for _, sep := range seps {
-		if match(fmt.Sprintf(`^(\d{3}%s)?(\+?45%s)?\d{2}%s\d{2}%s\d{2}%s\d{2}$`, sep, sep, sep, sep, sep), p) {
+		if util.Match(fmt.Sprintf(`^(\d{3}%s)?(\+?45%s)?\d{2}%s\d{2}%s\d{2}%s\d{2}$`, sep, sep, sep, sep, sep), p) {
 			return true
 		}
 	}
@@ -48,7 +39,7 @@ func ValidPhone(p string) bool {
 	// Ten digit AAAAA AAAAA
 	seps = []string{`\.`, ` `}
 	for _, sep := range seps {
-		if match(fmt.Sprintf(`^\d{5}%s\d{5}$`, sep), p) {
+		if util.Match(fmt.Sprintf(`^\d{5}%s\d{5}$`, sep), p) {
 			return true
 		}
 	}

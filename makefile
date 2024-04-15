@@ -15,4 +15,4 @@ docker-build:
 	docker build -t secure-go .
 
 docker-run:
-	docker run -p 8080:8080 secure-go
+	docker run -v ./users.db:/users.db -p 8080:8080 secure-go

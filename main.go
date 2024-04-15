@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
 	"secure/auth"
 	"secure/database"
 	"secure/name"
@@ -13,15 +14,8 @@ import (
 	"github.com/gorilla/mux"
 )
 
-// type PhoneBookList struct {
-// 	Username    string `json:"name"`
-// 	PhoneNumber string `json:"phone"`
-// }
-//
-// var phoneBook []PhoneBookList
-
 type Context struct {
-	users *database.Users
+	pb *database.PhoneBook
 }
 
 func main() {
@@ -29,9 +23,15 @@ func main() {
 	read := router.NewRoute().Subrouter()
 	readwrite := router.NewRoute().Subrouter()
 
-	ctx := Context{
-		users: database.CreateTable(),
+	path := "users.db"
+	if len(os.Args) > 1 {
+		path = os.Args[1]
 	}
+
+	ctx := Context{
+		pb: database.CreateTable(path),
+	}
+	defer ctx.pb.Close()
 
 	a := auth.Auth{}
 	a.Populate()
@@ -56,7 +56,11 @@ func LogMiddleware(next http.Handler) http.Handler {
 }
 
 func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
-	entries, err := ctx.users.ListAll()
+	entries, err := ctx.pb.ListAll()
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
 	json_string, err := json.Marshal(entries)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -87,8 +91,12 @@ func (ctx *Context) insertNewPhonebook(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	ctx.users.Append(&entry)
-	// phoneBook = append(phoneBook, entry)
+	err = ctx.pb.Append(&entry)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		log.Println("Failed to insert new entry into database")
+		return
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -111,18 +119,11 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	// Delete entry from in-memory phonebook
-	deleted, err := ctx.users.DeleteByName(name_str)
+	// Delete entry from database
+	deleted, err := ctx.pb.DeleteByName(name_str)
 	if err != nil {
 		log.Printf("Error while trying to delete by name:\n%s", err)
 	}
-	// for i, entry := range phoneBook {
-	// 	if entry.Username == name_str {
-	// 		phoneBook = append(phoneBook[:i], phoneBook[i+1:]...)
-	// 		deleted = true
-	// 		break
-	// 	}
-	// }
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
 		w.Write([]byte("Name not found"))
@@ -153,7 +154,7 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 
 	// Delete entry from in-memory phonebook
 	// deleted := false
-	deleted, err := ctx.users.DeleteByPhone(number)
+	deleted, err := ctx.pb.DeleteByPhone(number)
 	if err != nil {
 		log.Printf("Error while trying to delete by phone number:\n%s", err)
 	}

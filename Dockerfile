@@ -1,4 +1,4 @@
-FROM golang:1.17.2-alpine3.14
+FROM golang:1.19.1-alpine3.16
 
 RUN apk add --no-cache libc-dev
 RUN apk add --no-cache gcc
@@ -10,10 +10,10 @@ RUN go mod download
 
 COPY . .
 
-# RUN go test -v ./...
+RUN go test -v ./...
 RUN go build -o main .
 
 EXPOSE 8080
 
 # Run the executable
-CMD ["./main"]
+CMD ["./main", "/users.db"]
