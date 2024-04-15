@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
 	"secure/auth"
@@ -21,17 +22,29 @@ var phoneBook []PhoneBookList
 
 func main() {
 	router := mux.NewRouter()
+	read := router.NewRoute().Subrouter()
+	readwrite := router.NewRoute().Subrouter()
 
 	a := auth.Auth{}
 	a.Populate()
-	router.Use(a.Middleware)
-	router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
-	router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
-	router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
-	router.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
+	read.Use(a.Middleware(true, false))
+	readwrite.Use(a.Middleware(true, true))
+	// router.Use(a.Middleware)
+	router.Use(LogMiddleware)
+	read.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
+	readwrite.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
+	readwrite.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")
+	readwrite.HandleFunc("/PhoneBook/deleteByNumber", deletePhonebookEntryByNumber).Methods("PUT").Queries("number", "{number}")
 
 	log.Println("Starting server...")
 	log.Fatal(http.ListenAndServe(":8080", router))
+}
+
+func LogMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Println(fmt.Sprintf("%s %s", r.Method, r.RequestURI))
+		next.ServeHTTP(w, r)
+	})
 }
 
 func retreiveAllEntries(w http.ResponseWriter, _ *http.Request) {
