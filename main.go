@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"secure/auth"
 	"secure/name"
 	"secure/phone"
 
@@ -19,9 +20,11 @@ type PhoneBookList struct {
 var phoneBook []PhoneBookList
 
 func main() {
-
 	router := mux.NewRouter()
 
+	a := auth.Auth{}
+	a.Populate()
+	router.Use(a.Middleware)
 	router.HandleFunc("/PhoneBook/list", retreiveAllEntries).Methods("GET")
 	router.HandleFunc("/PhoneBook/add", insertNewPhonebook).Methods("POST")
 	router.HandleFunc("/PhoneBook/deleteByName", deletePhonebookEntryByName).Methods("PUT").Queries("name", "{name}")

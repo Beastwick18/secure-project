@@ -1,0 +1,10 @@
+[
+  {
+    "name": "sudo", 
+    "permissions": ["read", "write"]
+  },
+  {
+    "name": "normal",
+    "permissions": ["read"]
+  }
+]

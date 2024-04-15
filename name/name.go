@@ -1,8 +1,10 @@
 package name
 
 import (
+	"fmt"
 	"log"
 	"regexp"
+	"strings"
 )
 
 func match(pattern string, input string) bool {
@@ -14,10 +16,13 @@ func match(pattern string, input string) bool {
 }
 
 func ValidName(name string) bool {
-	first := `(([A-Z][a-z]*'[A-Z]?[a-z]+)|([A-Z][a-z]+))`
-	last := `(([A-Z][a-z]*'[A-Z]?[a-z]+)|([A-Z][a-z]+))`
-	last = `(` + last + `(-` + last + `)?)` // Allow optional -secondLastName
-	middle := `(([A-Z]\.?)|([A-Z][a-z]*'[A-Z]?[a-z]+)|([A-Z][a-z]+))`
-	return match(`^`+first+`( `+middle+`)?( `+last+`)?$`, name) ||
-		match(`^`+last+`\, `+first+`( `+middle+`)?$`, name)
+	first := `([a-z]+('[a-z]+)?)`
+	last := `([a-z]+('[a-z]+)?)`
+	last = fmt.Sprintf(`(%s(-%s)?)`, last, last) // Allow optional -secondLastName
+	middle := `(([a-z]\.?)|([a-z]+('[a-z]+)?))`
+	name = strings.ToLower(name)
+
+	fml := fmt.Sprintf(`^%s( %s)?( %s)?$`, first, middle, last)
+	lfm := fmt.Sprintf(`^%s\, %s( %s)?`, last, first, middle)
+	return match(fml, name) || match(lfm, name)
 }
