@@ -12,11 +12,10 @@ func ValidPhone(p string) bool {
 	}
 
 	no_zero3 := `([1-9][0-9]{0,2})`
-	no_zero_both := `(([1-9][0-9]{0,2})|([1-9][0-9]{0,1}))`
-	// no_zero2 := `[1-9][0-9]{0,1}`
+	no_zero23 := `([1-9][0-9]{1,2})`
 
 	// Match 011 +1 (12) 123-1234 like numbers
-	if util.Match(fmt.Sprintf(`^(\d{3}\s?)?(\+?%s\s?)?(\(%s\)\s?)?\d{3}\-\d{4}$`, no_zero3, no_zero_both), p) {
+	if util.Match(fmt.Sprintf(`^(\d{3}\s?)?(\+?%s\s?)?(\(%s\)\s?)?\d{3}\-\d{4}$`, no_zero3, no_zero23), p) {
 		return true
 	}
 

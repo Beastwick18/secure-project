@@ -1,4 +1,4 @@
-.PHONY: run build test docker docker-run
+.PHONY: run build test docker docker-build docker-run
 
 build:
 	go build -o seed-go
