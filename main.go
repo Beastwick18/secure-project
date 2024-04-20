@@ -12,6 +12,7 @@ import (
 	"secure/pkg/database"
 	"secure/pkg/name"
 	"secure/pkg/phone"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
@@ -56,7 +57,16 @@ func main() {
 	ctx.audit = log.New(w, "<Audit> ", log.LstdFlags)
 
 	a := auth.Auth{}
-	a.Populate()
+	a.Populate("./users.json")
+	for _, u := range a.Users {
+		var permissions strings.Builder
+		for _, p := range u.Permissions {
+			if val, ok := auth.PermissionShorthand[p]; ok {
+				permissions.WriteString(val)
+			}
+		}
+		log.Printf(`- "%s" [%s]: token="%s"`, u.Name, permissions.String(), u.Token)
+	}
 	read.Use(a.Middleware([]string{auth.Read}))
 	readwrite.Use(a.Middleware([]string{auth.Read, auth.Write}))
 	router.Use(LogMiddleware)
@@ -80,11 +90,13 @@ func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, r *http.Request) {
 	entries, err := ctx.pb.ListAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Failed to get list of users:\n%s", err)
 		return
 	}
 	json_string, err := json.Marshal(entries)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		log.Printf("Failed to convert list of users to json:\n%s", err)
 		return
 	}
 	ctx.audit.Printf(`[%s] List all users`, r.Header.Get("Authorization"))
@@ -116,7 +128,7 @@ func (ctx *Context) insertNewPhonebook(w http.ResponseWriter, r *http.Request) {
 	err = ctx.pb.Append(&entry)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		log.Println("Failed to insert new entry into database")
+		log.Printf("Failed to insert new entry into database:\n%s", err)
 		return
 	}
 
@@ -133,13 +145,15 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 	name_str := params["name"]
 	if name_str == "" {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Name is a mandatory field"))
 		return
 	}
 
 	if !name.ValidName(name_str) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Invalid phone number"))
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Invalid name"))
 		return
 	}
 
@@ -147,14 +161,19 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 	deleted, err := ctx.pb.DeleteByName(name_str)
 	if err != nil {
 		log.Printf("Error while trying to delete by name:\n%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Internal server error"))
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Name not found"))
 		return
 	}
 
 	ctx.audit.Printf(`[%s] Removed user "%s"`, r.Header.Get("Authorization"), name_str)
+	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -167,12 +186,14 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 	number := params["number"]
 	if number == "" {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Number not provided"))
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Number is a mandatory field"))
 		return
 	}
 
 	if !phone.ValidPhone(number) {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid phone number"))
 		return
 	}
@@ -183,10 +204,12 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
-		w.Write([]byte("Entered number not found"))
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Number not found"))
 		return
 	}
 
 	ctx.audit.Printf(`[%s] Removed user "%s"`, r.Header.Get("Authorization"), name)
+	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
 }

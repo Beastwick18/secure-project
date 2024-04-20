@@ -6,7 +6,6 @@ import (
 
 func TestValidNames(t *testing.T) {
 	valid_names := []string{
-		// "O'Malley, John F.",
 		"Bruce Schneier",
 		"Bruce F. Schneier",
 		"Schneier, Bruce",
@@ -14,11 +13,22 @@ func TestValidNames(t *testing.T) {
 		"O'Malley, John F.",
 		"John O'Malley-Smith",
 		"Cher",
+
+		// Student-provided
+		"Steven B. Culwell",
+		"Steven Bradley Culwell",
+		"Steven Culwell",
+		"Stèvèn Cülwèll",
+		"Culwell-O'Culwell, Steven B.",
+		"Раз два три",
+		"Раз два три'три-три",
 	}
 	for _, n := range valid_names {
-		if res := ValidName(n); !res {
-			t.Fatalf(`Input: "%s", Result: "%v", Expected: "%v"`, n, res, true)
-		}
+		t.Run(n, func(t *testing.T) {
+			if res := ValidName(n); !res {
+				t.Errorf(`Input: "%s", Result: "%v", Expected: "%v"`, n, res, true)
+			}
+		})
 	}
 }
 
@@ -30,11 +40,20 @@ func TestInvalidNames(t *testing.T) {
 		"<Script>alert(“XSS”)</Script>",
 		"Brad Everett Samuel Smith",
 		"select * from users;",
+
+		// Student-provided
+		"B. Steven, Culwell",
+		"Culwell-O'Culwell, B. Steven",
+		"Steven Culwell-Culwell-Culwell",
+		"B. Culwell-O'Culwell Steven",
+		"Раз два три'три-три два",
 	}
 
 	for _, n := range invalid_names {
-		if res := ValidName(n); res {
-			t.Fatalf(`Input: "%s", Result: "%v", Expected: "%v"`, n, res, false)
-		}
+		t.Run(n, func(t *testing.T) {
+			if res := ValidName(n); res {
+				t.Errorf(`Input: "%s", Result: "%v", Expected: "%v"`, n, res, false)
+			}
+		})
 	}
 }

@@ -1,12 +1,12 @@
 [
   {
     "name": "read-only",
-    "apiKey": "a3446bb2-0ae2-4c4d-8bf5-4746f0d6e5b9",
+    "token": "a3446bb2-0ae2-4c4d-8bf5-4746f0d6e5b9",
     "permissions": ["read"]
   },
   {
     "name": "read-write",
-    "apiKey": "eeef7da7-6c95-4d71-b2d0-3e6924e37462",
+    "token": "eeef7da7-6c95-4d71-b2d0-3e6924e37462",
     "permissions": ["read", "write"]
   }
 ]

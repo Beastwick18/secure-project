@@ -21,7 +21,7 @@ const (
 
 type User struct {
 	Name        string   `json:"name"`
-	ApiKey      string   `json:"apiKey"`
+	Token       string   `json:"token"`
 	Permissions []string `json:"permissions"`
 }
 
@@ -47,7 +47,7 @@ func (auth *Auth) Middleware(permissions []string) mux.MiddlewareFunc {
 			token = splits[1]
 			var u *User
 			for _, user := range auth.Users {
-				if user.ApiKey == token {
+				if user.Token == token {
 					u = &user
 					break
 				}
@@ -64,15 +64,15 @@ func (auth *Auth) Middleware(permissions []string) mux.MiddlewareFunc {
 					return
 				}
 			}
-			log.Printf(`Authenticated "%s"`, u.Name)
+			// log.Printf(`Authenticated "%s"`, u.Name)
 			r.Header.Set("Authorization", u.Name)
 			next.ServeHTTP(w, r)
 		})
 	}
 }
 
-func (auth *Auth) Populate() {
-	file, err := os.ReadFile("./users.json")
+func (auth *Auth) Populate(path string) {
+	file, err := os.ReadFile(path)
 	if err != nil {
 		log.Fatalf("Failed to load users:\n%s", err)
 	}
@@ -81,16 +81,11 @@ func (auth *Auth) Populate() {
 		log.Fatalf("Failed to read users.json:\n%s", err)
 	}
 
-	log.Println("Successfully loaded users:")
 	for _, u := range auth.Users {
-		var permissions strings.Builder
 		for _, p := range u.Permissions {
-			if val, ok := PermissionShorthand[p]; ok {
-				permissions.WriteString(val)
-			} else {
+			if _, ok := PermissionShorthand[p]; !ok {
 				log.Printf(`Unknown permission: "%s"`, p)
 			}
 		}
-		log.Printf(`- "%s" [%s]: apiKey="%s"`, u.Name, permissions.String(), u.ApiKey)
 	}
 }
