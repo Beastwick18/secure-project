@@ -6,6 +6,7 @@ import (
 
 func TestValidPhones(t *testing.T) {
 	valid_phones := []string{
+		// Known good
 		"12345",
 		"(703)111-2121",
 		"123-1234",
@@ -32,6 +33,7 @@ func TestValidPhones(t *testing.T) {
 
 func TestInvalidPhones(t *testing.T) {
 	invalid_phones := []string{
+		// Known bad
 		"123",
 		"1/703/123/1234",
 		"Nr 102-123-1234",

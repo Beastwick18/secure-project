@@ -64,7 +64,6 @@ func (auth *Auth) Middleware(permissions []string) mux.MiddlewareFunc {
 					return
 				}
 			}
-			// log.Printf(`Authenticated "%s"`, u.Name)
 			r.Header.Set("Authorization", u.Name)
 			next.ServeHTTP(w, r)
 		})

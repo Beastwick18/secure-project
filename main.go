@@ -90,12 +90,16 @@ func (ctx *Context) retreiveAllEntries(w http.ResponseWriter, r *http.Request) {
 	entries, err := ctx.pb.ListAll()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Internal server error"))
 		log.Printf("Failed to get list of users:\n%s", err)
 		return
 	}
 	json_string, err := json.Marshal(entries)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Internal server error"))
 		log.Printf("Failed to convert list of users to json:\n%s", err)
 		return
 	}
@@ -109,25 +113,33 @@ func (ctx *Context) insertNewPhonebook(w http.ResponseWriter, r *http.Request) {
 	err := json.NewDecoder(r.Body).Decode(&entry)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid JSON format"))
+		log.Printf("ADD recieved invalid json format")
 		return
 	}
 
 	if !name.ValidName(entry.Name) {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid name"))
+		log.Printf("ADD recieved invalid name")
 		return
 	}
 
 	if !phone.ValidPhone(entry.Phone) {
 		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid phone number"))
+		log.Printf("ADD recieved invalid number")
 		return
 	}
 
 	err = ctx.pb.Append(&entry)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Internal server error"))
 		log.Printf("Failed to insert new entry into database:\n%s", err)
 		return
 	}
@@ -147,6 +159,7 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Name is a mandatory field"))
+		log.Printf("DEL by name is missing name field")
 		return
 	}
 
@@ -154,6 +167,7 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid name"))
+		log.Printf("DEL by name recieved invalid name")
 		return
 	}
 
@@ -164,17 +178,21 @@ func (ctx *Context) deletePhonebookEntryByName(w http.ResponseWriter, r *http.Re
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Internal server error"))
+		log.Printf("DEL by name failed to delete")
+		return
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Name not found"))
+		log.Printf("DEL by name could not find name")
 		return
 	}
 
 	ctx.audit.Printf(`[%s] Removed user "%s"`, r.Header.Get("Authorization"), name_str)
 	w.Header().Set("Content-Type", "text/plain")
 	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("Removed user"))
 }
 
 func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.Request) {
@@ -188,6 +206,7 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Number is a mandatory field"))
+		log.Printf("DEL by number is missing number field")
 		return
 	}
 
@@ -195,17 +214,24 @@ func (ctx *Context) deletePhonebookEntryByNumber(w http.ResponseWriter, r *http.
 		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Invalid phone number"))
+		log.Printf("DEL by number recieved invalid number")
 		return
 	}
 
 	name, deleted, err := ctx.pb.DeleteByPhone(number)
 	if err != nil {
 		log.Printf("Error while trying to delete by phone number:\n%s", err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "text/plain")
+		w.Write([]byte("Internal server error"))
+		log.Printf("DEL by number failed to delete")
+		return
 	}
 	if !deleted {
 		w.WriteHeader(http.StatusNotFound)
 		w.Header().Set("Content-Type", "text/plain")
 		w.Write([]byte("Number not found"))
+		log.Printf("DEL by number could not find number")
 		return
 	}
 
